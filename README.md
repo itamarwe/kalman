@@ -2,6 +2,9 @@
 
 Kalman filter for Javascript.
 
+## Dependencies
+The module requires a sylvester.js (https://github.com/jcoglan/sylvester) compatible matrix and vector manipulation module.
+
 ## License
 
 (The MIT License)
