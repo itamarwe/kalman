@@ -24,19 +24,17 @@ var Kalman = {
   version: '0.0.1'
 };
 
-function KalmanModel(){};
+KalmanModel = (function(){
 
-KalmanModel.prototype = {
-  create : function(x_0,P_0,F_k,Q_k){
-    var KM = new KalmanModel;
-    KM.x_k  = x_0;
-    KM.P_k  = P_0;
-    KM.F_k  = F_k;
-    KM.Q_k  = Q_k;
-    return KM;
-  },
-  update : function(o){
-    I = Matrix.I;
+  function KalmanModel(x_0,P_0,F_k,Q_k){
+    this.x_k  = x_0;
+    this.P_k  = P_0;
+    this.F_k  = F_k;
+    this.Q_k  = Q_k;
+  }
+  
+  KalmanModel.prototype.update =  function(o){
+    I = Matrix.I(this.P_k.rows());
     //init
     this.x_k_ = this.x_k;
     this.P_k_ = this.P_k;
@@ -52,16 +50,17 @@ KalmanModel.prototype = {
     this.x_k = this.x_k_k_ + K_k.x(y_k);
     this.P_k = this.I.subtract(K_k.x(H_k)).x(P_k_k_);
   }
-};
+  
+  return KalmanModel;
+})();
 
-function KalmanObservation(){};
+KalmanObservation = (function(){
 
-KalmanObservation.prototype = {
-  create : function(z_k,H_k,Q_k){
-    var KO = new KalmanObservation;
-    KO.z_k = z_k;//observation
-    KO.H_k = H_k;//observation model
-    KO.R_k = R_k;//observation noise covariance
-    return KO;
+  function KalmanObservation(z_k,H_k,Q_k){
+    this.z_k = z_k;//observation
+    this.H_k = H_k;//observation model
+    this.R_k = R_k;//observation noise covariance
   }
-};
+  
+  return KalmanObservation;
+})();
