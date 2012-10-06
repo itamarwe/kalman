@@ -28,7 +28,7 @@ for (var i=0;i<200;i++){
   z_k = $V([0.5+Math.random()]);
   KO.z_k=z_k;
   KM.update(KO);
-  document.writeln(JSON.stringify(KM.x_k.elements)+"<br>");
+  console.log(JSON.stringify(KM.x_k.elements));
 }
 </script>
 ```
