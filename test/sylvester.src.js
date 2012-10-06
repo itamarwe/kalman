@@ -579,12 +579,13 @@ Matrix.prototype = {
 
   // Returns the determinant for square matrices
   determinant: function() {
+    if (this.elements.length === 0) { return 1; }
     if (!this.isSquare()) { return null; }
     var M = this.toRightTriangular();
-    var det = M.elements[0][0], n = M.elements.length - 1, k = n, i;
-    do { i = k - n + 1;
+    var det = M.elements[0][0], n = M.elements.length;
+    for (var i = 1; i < n; i++) {
       det = det * M.elements[i][i];
-    } while (--n);
+    }
     return det;
   },
 
