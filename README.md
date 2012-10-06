@@ -5,6 +5,33 @@ Kalman filter for Javascript.
 ## Dependencies
 The module requires a sylvester.js (https://github.com/jcoglan/sylvester) compatible matrix and vector manipulation module.
 
+## Usage
+Using the Kalman Filter module is very simple:
+
+```html
+<script type="text/javascript" src="sylvester.src.js"></script>
+<script type="text/javascript" src="../kalman.js"></script>
+
+<script type="text/javascript">
+var x_0 = $V([-10]);
+var P_0 = $M([[1]]);
+var F_k=$M([[1]]);
+var Q_k=$M([[0]]);
+var KM = new KalmanModel(x_0,P_0,F_k,Q_k);
+
+var z_k = $V([1]);
+var H_k = $M([[1]]);
+var R_k = $M([[4]]);
+var KO = new KalmanObservation(z_k,H_k,R_k);
+
+for (var i=0;i<200;i++){
+  z_k = $V([0.5+Math.random()]);
+  KO.z_k=z_k;
+  KM.update(KO);
+  document.writeln(JSON.stringify(KM.x_k.elements)+"<br>");
+}
+</script>
+```
 ## License
 
 (The MIT License)
