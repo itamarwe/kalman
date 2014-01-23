@@ -33,7 +33,7 @@ KalmanModel = (function(){
     this.Q_k  = Q_k;
   }
   
-  KalmanModel.prototype.update =  function(o, Matrix){
+  KalmanModel.prototype.update =  function(o){
     this.I = Matrix.I(this.P_k.rows());
     //init
     this.x_k_ = this.x_k;
