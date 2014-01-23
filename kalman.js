@@ -33,8 +33,8 @@ KalmanModel = (function(){
     this.Q_k  = Q_k;
   }
   
-  KalmanModel.prototype.update =  function(o){
-    I = Matrix.I(this.P_k.rows());
+  KalmanModel.prototype.update =  function(o, Matrix){
+    this.I = Matrix.I(this.P_k.rows());
     //init
     this.x_k_ = this.x_k;
     this.P_k_ = this.P_k;
@@ -44,11 +44,11 @@ KalmanModel = (function(){
     this.P_k_k_ = this.F_k.x(this.P_k_.x(this.F_k.transpose()));
 
     //update
-    this.y_k = o.z_k.subtract(this.H_k.x(this.x_k_k_));//observation residual
-    this.S_k = this.H_k.x(P_k_k_.x(H_k.transpose())).add(R_k);//residual covariance
-    this.K_k = this.P_k_k_.x(H_k.transpose().x(S_k.inverse()));//Optimal Kalman gain
-    this.x_k = this.x_k_k_ + K_k.x(y_k);
-    this.P_k = this.I.subtract(K_k.x(H_k)).x(P_k_k_);
+    this.y_k = o.z_k.subtract(o.H_k.x(this.x_k_k_));//observation residual
+    this.S_k = o.H_k.x(this.P_k_k_.x(o.H_k.transpose())).add(o.R_k);//residual covariance
+    this.K_k = this.P_k_k_.x(o.H_k.transpose().x(this.S_k.inverse()));//Optimal Kalman gain
+    this.x_k = this.x_k_k_.add(this.K_k.x(this.y_k));
+    this.P_k = this.I.subtract(this.K_k.x(o.H_k)).x(this.P_k_k_);
   }
   
   return KalmanModel;
