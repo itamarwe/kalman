@@ -41,8 +41,8 @@ KalmanModel = (function(){
 
     //Predict
     this.x_k_k_ = this.F_k.x(this.x_k_);
-    this.P_k_k_ = this.F_k.x(this.P_k_.x(this.F_k.transpose()));
-
+    this.P_k_k_ = this.F_k.x(this.P_k_.x(this.F_k.transpose())).add(this.Q_k);
+    
     //update
     this.y_k = o.z_k.subtract(o.H_k.x(this.x_k_k_));//observation residual
     this.S_k = o.H_k.x(this.P_k_k_.x(o.H_k.transpose())).add(o.R_k);//residual covariance
