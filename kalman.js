@@ -56,7 +56,7 @@ KalmanModel = (function(){
 
 KalmanObservation = (function(){
 
-  function KalmanObservation(z_k,H_k,Q_k){
+  function KalmanObservation(z_k,H_k,R_k){
     this.z_k = z_k;//observation
     this.H_k = H_k;//observation model
     this.R_k = R_k;//observation noise covariance
