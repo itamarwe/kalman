@@ -34,6 +34,8 @@
     "kalman.js",
     "kalman.mjs",
     "kalman.d.ts",
+    "examples",
+    "vendor/sylvester.src.js",
     "LICENSE",
     "README.md"
   ],

@@ -36,7 +36,7 @@ import { KalmanModel, KalmanObservation } from '@itamarwe/kalman';
 ### Browser Globals
 
 ```html
-<script src="sylvester.src.js"></script>
+<script src="vendor/sylvester.src.js"></script>
 <script src="kalman.js"></script>
 
 <script>
@@ -56,6 +56,26 @@ model.update(observation);
 console.log(model.x_k.elements);
 </script>
 ```
+
+## Examples
+
+- [Device orientation smoothing](examples/device-orientation.html) shows a full
+  browser example for smoothing `deviceorientation` `alpha`, `beta`, and
+  `gamma` readings. It includes a real sensor listener, sample data for desktop
+  testing, angle unwrapping for `0`/`360` crossings, and comments explaining
+  each Kalman matrix.
+
+For direct orientation smoothing, the common mapping is:
+
+| Value | Meaning |
+| --- | --- |
+| `x_0` | Initial state estimate, for example `$V([alpha, beta, gamma])`. |
+| `P_0` | Initial uncertainty in that state estimate. |
+| `F_k` | State transition. Identity means the next angle starts near the previous angle. |
+| `Q_k` | Process noise. Increase this when real motion changes quickly and the filter lags. |
+| `z_k` | Current sensor measurement. Update this on every sensor event. |
+| `H_k` | Observation model. Identity works when the measured angles map directly to the state. |
+| `R_k` | Measurement noise. Increase this for noisy channels, such as a jumpy alpha reading. |
 
 ## API
 
@@ -105,5 +125,5 @@ exports.
 
 MIT. See [LICENSE](LICENSE).
 
-The vendored `test/sylvester.src.js` file is MIT licensed by James Coglan and
-is used only for compatibility tests.
+The vendored `vendor/sylvester.src.js` file is MIT licensed by James Coglan and
+is used for compatibility tests and examples.
