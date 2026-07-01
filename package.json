@@ -1,0 +1,46 @@
+{
+  "name": "@itamarwe/kalman",
+  "version": "0.1.0",
+  "description": "A small linear Kalman filter for JavaScript.",
+  "license": "MIT",
+  "author": "Itamar Weiss",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itamarwe/kalman.git"
+  },
+  "bugs": {
+    "url": "https://github.com/itamarwe/kalman/issues"
+  },
+  "homepage": "https://github.com/itamarwe/kalman#readme",
+  "keywords": [
+    "kalman",
+    "kalman-filter",
+    "filter",
+    "estimation",
+    "sensor-fusion"
+  ],
+  "main": "./kalman.js",
+  "module": "./kalman.mjs",
+  "types": "./kalman.d.ts",
+  "exports": {
+    ".": {
+      "types": "./kalman.d.ts",
+      "import": "./kalman.mjs",
+      "require": "./kalman.js",
+      "default": "./kalman.js"
+    }
+  },
+  "files": [
+    "kalman.js",
+    "kalman.mjs",
+    "kalman.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
