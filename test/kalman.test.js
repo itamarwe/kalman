@@ -8,7 +8,7 @@ const vm = require('node:vm');
 const { pathToFileURL } = require('node:url');
 
 const root = path.join(__dirname, '..');
-const sylvesterPath = path.join(__dirname, 'sylvester.src.js');
+const sylvesterPath = path.join(root, 'vendor', 'sylvester.src.js');
 const kalmanPath = path.join(root, 'kalman.js');
 
 vm.runInThisContext(fs.readFileSync(sylvesterPath, 'utf8'), {

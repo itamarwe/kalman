@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kalman device orientation example</title>
+  <script src="../vendor/sylvester.src.js"></script>
+  <script src="../kalman.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+      max-width: 900px;
+    }
+
+    button {
+      margin: 0 8px 16px 0;
+      padding: 8px 12px;
+      font: inherit;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 16px 0;
+      min-width: 420px;
+    }
+
+    th,
+    td {
+      border: 1px solid #8888;
+      padding: 8px 12px;
+      text-align: right;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    code,
+    pre {
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    }
+
+    pre {
+      overflow-x: auto;
+      padding: 16px;
+      background: #8881;
+    }
+  </style>
+</head>
+<body>
+  <h1>Device orientation smoothing</h1>
+
+  <p>
+    This example smooths <code>alpha</code>, <code>beta</code>, and
+    <code>gamma</code> from the browser <code>deviceorientation</code> event.
+    It models the current orientation angles directly, so the state vector is
+    <code>[alpha, beta, gamma]</code>.
+  </p>
+
+  <button id="start-sensor" type="button">Start device sensor</button>
+  <button id="run-sample" type="button">Run sample data</button>
+
+  <p id="status">Waiting for data.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Channel</th>
+        <th>Raw deg</th>
+        <th>Smoothed deg</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>alpha</td>
+        <td id="raw-alpha">-</td>
+        <td id="smooth-alpha">-</td>
+      </tr>
+      <tr>
+        <td>beta</td>
+        <td id="raw-beta">-</td>
+        <td id="smooth-beta">-</td>
+      </tr>
+      <tr>
+        <td>gamma</td>
+        <td id="raw-gamma">-</td>
+        <td id="smooth-gamma">-</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Increase <code>Q</code> when the filter feels too slow. Increase
+    <code>R</code> when a sensor channel is too noisy. In this example alpha is
+    treated as noisier than beta and gamma.
+  </p>
+
+  <pre><code>var x_0 = $V([alpha, beta, gamma]); // current angle estimate
+var P_0 = diagonal([1, 1, 1]);      // initial uncertainty
+var F_k = identity3();              // next angle starts near previous angle
+var Q_k = diagonal([0.03, 0.01, 0.01]); // true motion between readings
+
+var z_k = $V([alpha, beta, gamma]); // current sensor reading
+var H_k = identity3();              // measured angles map directly to state
+var R_k = diagonal([0.12, 0.04, 0.04]); // sensor noise per channel</code></pre>
+
+  <script>
+  (function() {
+    var DEG_TO_RAD = Math.PI / 180;
+    var RAD_TO_DEG = 180 / Math.PI;
+    var TWO_PI = Math.PI * 2;
+
+    var model = null;
+    var observation = null;
+    var previousUnwrapped = null;
+    var sampleTimer = null;
+
+    var tuning = {
+      initialCovariance: [1, 1, 1],
+      processNoise: [0.03, 0.01, 0.01],
+      measurementNoise: [0.12, 0.04, 0.04]
+    };
+
+    function diagonal(values) {
+      return $M([
+        [values[0], 0, 0],
+        [0, values[1], 0],
+        [0, 0, values[2]]
+      ]);
+    }
+
+    function identity3() {
+      return $M([
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+      ]);
+    }
+
+    function initializeFilter(angles) {
+      var x_0 = $V(angles);
+      var P_0 = diagonal(tuning.initialCovariance);
+      var F_k = identity3();
+      var Q_k = diagonal(tuning.processNoise);
+
+      model = new KalmanModel(x_0, P_0, F_k, Q_k);
+
+      var z_k = $V(angles);
+      var H_k = identity3();
+      var R_k = diagonal(tuning.measurementNoise);
+
+      observation = new KalmanObservation(z_k, H_k, R_k);
+    }
+
+    function nearestEquivalentAngle(previous, current) {
+      while (current - previous > Math.PI) {
+        current -= TWO_PI;
+      }
+
+      while (current - previous < -Math.PI) {
+        current += TWO_PI;
+      }
+
+      return current;
+    }
+
+    function unwrapAngles(angles) {
+      if (!previousUnwrapped) {
+        previousUnwrapped = angles.slice();
+        return angles;
+      }
+
+      var unwrapped = [
+        nearestEquivalentAngle(previousUnwrapped[0], angles[0]),
+        nearestEquivalentAngle(previousUnwrapped[1], angles[1]),
+        nearestEquivalentAngle(previousUnwrapped[2], angles[2])
+      ];
+
+      previousUnwrapped = unwrapped;
+      return unwrapped;
+    }
+
+    function smoothReading(reading) {
+      var rawRadians = [
+        reading.alpha * DEG_TO_RAD,
+        reading.beta * DEG_TO_RAD,
+        reading.gamma * DEG_TO_RAD
+      ];
+      var angles = unwrapAngles(rawRadians);
+
+      if (!model) {
+        initializeFilter(angles);
+      } else {
+        observation.z_k = $V(angles);
+        model.update(observation);
+      }
+
+      return model.x_k.elements;
+    }
+
+    function formatDegrees(radians) {
+      return (radians * RAD_TO_DEG).toFixed(2);
+    }
+
+    function render(reading, smoothed) {
+      document.getElementById('raw-alpha').textContent = reading.alpha.toFixed(2);
+      document.getElementById('raw-beta').textContent = reading.beta.toFixed(2);
+      document.getElementById('raw-gamma').textContent = reading.gamma.toFixed(2);
+
+      document.getElementById('smooth-alpha').textContent = formatDegrees(smoothed[0]);
+      document.getElementById('smooth-beta').textContent = formatDegrees(smoothed[1]);
+      document.getElementById('smooth-gamma').textContent = formatDegrees(smoothed[2]);
+    }
+
+    function handleReading(reading) {
+      if (
+        typeof reading.alpha !== 'number' ||
+        typeof reading.beta !== 'number' ||
+        typeof reading.gamma !== 'number'
+      ) {
+        document.getElementById('status').textContent = 'Orientation event did not include all channels.';
+        return;
+      }
+
+      var smoothed = smoothReading(reading);
+      render(reading, smoothed);
+      document.getElementById('status').textContent = 'Filtering orientation readings.';
+    }
+
+    function handleDeviceOrientation(event) {
+      handleReading({
+        alpha: event.alpha,
+        beta: event.beta,
+        gamma: event.gamma
+      });
+    }
+
+    function resetFilter() {
+      clearInterval(sampleTimer);
+      sampleTimer = null;
+      model = null;
+      observation = null;
+      previousUnwrapped = null;
+    }
+
+    async function startSensor() {
+      resetFilter();
+      window.removeEventListener('deviceorientation', handleDeviceOrientation);
+
+      if (
+        window.DeviceOrientationEvent &&
+        typeof window.DeviceOrientationEvent.requestPermission === 'function'
+      ) {
+        var permission = await window.DeviceOrientationEvent.requestPermission();
+        if (permission !== 'granted') {
+          document.getElementById('status').textContent = 'Device orientation permission was not granted.';
+          return;
+        }
+      }
+
+      window.addEventListener('deviceorientation', handleDeviceOrientation);
+      document.getElementById('status').textContent = 'Listening for deviceorientation events.';
+    }
+
+    function runSampleData() {
+      resetFilter();
+      window.removeEventListener('deviceorientation', handleDeviceOrientation);
+
+      var samples = [
+        { alpha: 358, beta: 3.0, gamma: -2.0 },
+        { alpha: 359, beta: 3.2, gamma: -2.1 },
+        { alpha: 0.5, beta: 2.8, gamma: -1.8 },
+        { alpha: 1.5, beta: 3.4, gamma: -2.4 },
+        { alpha: 2.0, beta: 3.1, gamma: -2.0 },
+        { alpha: 6.0, beta: 3.5, gamma: -1.7 },
+        { alpha: 8.0, beta: 3.3, gamma: -2.2 },
+        { alpha: 11.0, beta: 3.6, gamma: -2.1 }
+      ];
+      var index = 0;
+
+      sampleTimer = setInterval(function() {
+        handleReading(samples[index]);
+        index += 1;
+
+        if (index >= samples.length) {
+          clearInterval(sampleTimer);
+          document.getElementById('status').textContent = 'Sample data complete.';
+        }
+      }, 500);
+    }
+
+    document.getElementById('start-sensor').addEventListener('click', startSensor);
+    document.getElementById('run-sample').addEventListener('click', runSampleData);
+  }());
+  </script>
+</body>
+</html>
